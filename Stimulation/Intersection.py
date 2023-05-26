@@ -25,11 +25,13 @@ class carClass:
     starting_time = -1
     xCoordinate = -1
     yCoordinate = -1
-    speed = 10
+    speed = 2
     lane = -1
     outgoing = True
+    crossed = False
 
-    def __init__(self):
+    def __init__(self, ev):
+        self.emergencyVehicle = ev
         self.direction = random.randint(0, 2)
         self.starting_time = datetime.now()
         self.lane = random.randint(1, 4)
@@ -48,7 +50,7 @@ class carClass:
 
 
 # To access those vars which are same for all cars
-carConfig = carClass()
+carConfig = carClass(0)
 
 
 # Traffic light class
@@ -65,57 +67,79 @@ class laneClass:
     emergencyVehicle = 0
 
     def score(carsWaiting, emergencyVehicle):
-        x = emergencyVehicle * 3
+        x = emergencyVehicle * 5
         if carsWaiting + x == 0:
-            return 0
-        score = 1 / (carsWaiting + x)
+            return 100
+        score = 1 / (carsWaiting + x) * 100
         return score
+    
 
 
 # Lanes
 class lane1(laneClass, trafficLightClass):
+    lastCar = y
+
     def __init__(self) -> None:
         pass
 
     def score():
         return laneClass.score(lane1.carsWaiting, lane1.emergencyVehicle)
+    
+    def change(newState):
+        lane1.state=newState
 
 
 class lane2(laneClass, trafficLightClass):
+    lastCar = x + roadWidth
+
     def __init__(self) -> None:
         pass
 
     def score():
         return laneClass.score(lane2.carsWaiting, lane2.emergencyVehicle)
+    
+    def change(newState):
+        lane1.state=newState
 
 
 class lane3(laneClass, trafficLightClass):
+    lastCar = y + roadWidth
+
     def __init__(self) -> None:
         pass
 
     def score():
         return laneClass.score(lane3.carsWaiting, lane3.emergencyVehicle)
+    
+    def change(newState):
+        lane1.state=newState
 
 
 class lane4(laneClass, trafficLightClass):
+    lastCar = x
+
     def __init__(self) -> None:
         pass
 
     def score():
         return laneClass.score(lane4.carsWaiting, lane4.emergencyVehicle)
+    
+    def change(newState):
+        lane1.state=newState
 
 
-# Car obj
-car1 = carClass()
-car2 = carClass()
+# Car Array
 
-carArray = [car1, car2]
+carArray = []
 
 
 done = False
 # Create Cars
 event_id = 2828
+ev_event_id = 112
+
 pygame.time.set_timer(event_id, 1000)
+pygame.time.set_timer(ev_event_id, 10000)
 
 # Text font
 font = pygame.font.Font("freesansbold.ttf", 32)
@@ -127,7 +151,56 @@ while not done:
             done = True
         elif event.type == event_id:
             for i in range(2):
-                carArray.append(carClass())
+                carObj = carClass(0)
+                if carObj.lane == 1:
+                    lane1.carsWaiting += 1
+                elif carObj.lane == 2:
+                    lane2.carsWaiting += 1
+                elif carObj.lane == 3:
+                    lane3.carsWaiting += 1
+                else:
+                    lane4.carsWaiting += 1
+                carArray.append(carObj)
+        elif event.type == ev_event_id:
+            carObj = carClass(1)
+            if carObj.lane == 1:
+                lane1.carsWaiting += 1
+            elif carObj.lane == 2:
+                lane2.carsWaiting += 1
+            elif carObj.lane == 3:
+                lane3.carsWaiting += 1
+            else:
+                lane4.carsWaiting += 1
+            carArray.append(carObj)
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                lane1.state = 0
+            elif event.key == pygame.K_w:
+                lane1.state = 1
+            elif event.key == pygame.K_e:
+                lane1.state = 2
+                lane1.lastCar= y
+            elif event.key == pygame.K_a:
+                lane2.state = 0
+            elif event.key == pygame.K_s:
+                lane2.state = 1
+            elif event.key == pygame.K_d:
+                lane2.state = 2
+                lane2.lastCar = x+roadWidth
+            elif event.key == pygame.K_z:
+                lane3.state = 0
+            elif event.key == pygame.K_x:
+                lane3.state = 1
+            elif event.key == pygame.K_c:
+                lane3.state = 2
+                lane3.lastCar = y+roadWidth
+            elif event.key == pygame.K_1:
+                lane4.state = 0
+            elif event.key == pygame.K_2:
+                lane4.state = 1
+            elif event.key == pygame.K_3:
+                lane4.state = 2
+                lane4.lastCar = x
 
     # Grass and Roads
     pygame.draw.rect(screen, (129, 133, 137), (0, 0, screenx, screeny))
@@ -139,14 +212,26 @@ while not done:
     )
     # Lane Text
     text1 = font.render("LANE 1", True, "White", "Black")
+    score1 = font.render(str(round(lane1.score(),3)),True,'White','Black')
+    # carw1 = font.render(str(lane1.carsWaiting),True,'White','Black')
     text2 = font.render("LANE 2", True, "White", "Black")
+    score2 = font.render(str(round(lane2.score(),3)),True,'White','Black')
     text3 = font.render("LANE 3", True, "White", "Black")
+    score3 = font.render(str(round(lane3.score(),3)),True,'White','Black')    
     text4 = font.render("LANE 4", True, "White", "Black")
+    score4 = font.render(str(round(lane4.score(),3)),True,'White','Black')
+    score = font.render("Score: "+str(round(lane1.score()+lane2.score()+lane3.score()+lane4.score(),3)),True,'White','Black')
 
     screen.blit(text1, (x + roadWidth, 0))
-    screen.blit(text2, (screenx - 120, y - 32))
-    screen.blit(text3, (x + roadWidth, screeny - 30))
+    screen.blit(score1, (x + roadWidth, 30))
+    # screen.blit(carw1, (x + roadWidth, 60))
+    screen.blit(text2, (screenx - 120, y + roadWidth))
+    screen.blit(score2,  (screenx - 120, y + roadWidth+30))
+    screen.blit(text3, (x - 120, screeny - 30))
+    screen.blit(score3, (x - 120, screeny - 60))
     screen.blit(text4, (0, y - 32))
+    screen.blit(score4, (0, y -60))
+    screen.blit(score, (0, 0))
 
     # Render Traffic Lights
     # Lane 1
@@ -159,7 +244,9 @@ while not done:
             screen, (255, 234, 0), (x + roadWidth / 2, y, roadWidth / 2, 25)
         )
     else:
-        pygame.draw.rect(screen, (0, 0, 255), (x + roadWidth / 2, y, roadWidth / 2, 25))
+        pygame.draw.rect(
+            screen, (124, 252, 0), (x + roadWidth / 2, y, roadWidth / 2, 25)
+        )
 
     # Lane 2
     if lane2.state == 0:
@@ -170,11 +257,15 @@ while not done:
         )
     elif lane2.state == 1:
         pygame.draw.rect(
-            screen, (255, 234, 0), (x + roadWidth - 25, y, 25, roadWidth / 2)
+            screen,
+            (255, 234, 0),
+            (x + roadWidth - 25, y + roadWidth / 2, 25, roadWidth / 2),
         )
     else:
         pygame.draw.rect(
-            screen, (0, 0, 255), (x + roadWidth - 25, y, 25, roadWidth / 2)
+            screen,
+            (124, 252, 0),
+            (x + roadWidth - 25, y + roadWidth / 2, 25, roadWidth / 2),
         )
 
     # Lane 3
@@ -188,7 +279,7 @@ while not done:
         )
     else:
         pygame.draw.rect(
-            screen, (0, 0, 255), (x, y + roadWidth - 25, roadWidth / 2, 25)
+            screen, (124, 252, 0), (x, y + roadWidth - 25, roadWidth / 2, 25)
         )
 
     # Lane 4
@@ -197,7 +288,7 @@ while not done:
     elif lane4.state == 1:
         pygame.draw.rect(screen, (255, 234, 0), (x, y, 25, roadWidth / 2))
     else:
-        pygame.draw.rect(screen, (0, 0, 255), (x, y, 25, roadWidth / 2))
+        pygame.draw.rect(screen, (124, 252, 0), (x, y, 25, roadWidth / 2))
 
     # Horizontal Bands
     for i in range(int(x), 0, -120):
@@ -219,7 +310,7 @@ while not done:
         pygame.draw.rect(
             screen,
             (255, 255, 255),
-            (x + roadWidth / 2 - bandWidth / 2, i-bandLength, bandWidth, bandLength),
+            (x + roadWidth / 2 - bandWidth / 2, i - bandLength, bandWidth, bandLength),
         )
     for i in range(int(y + roadWidth), screenx, 120):
         pygame.draw.rect(
@@ -229,9 +320,20 @@ while not done:
         )
 
     for car in carArray:
-        pygame.draw.circle(
-            screen, (0, 9, 255), (car.xCoordinate, car.yCoordinate), carConfig.radius
-        )  # Render car in lane 1
+        if not car.emergencyVehicle:
+            pygame.draw.circle(
+                screen,
+                (0, 9, 255),
+                (car.xCoordinate, car.yCoordinate),
+                carConfig.radius,
+            )  # Render car
+        else:
+            pygame.draw.circle(
+                screen,
+                (136, 8, 8),
+                (car.xCoordinate, car.yCoordinate),
+                carConfig.radius,
+            )
 
         if (
             car.xCoordinate < 0
@@ -243,13 +345,25 @@ while not done:
         # Move Car
         if car.lane == 1:
             if car.outgoing:
-                if car.direction == 0:
-                    if car.yCoordinate >= y + roadWidth / 4:
-                        car.outgoing = False
-                elif car.direction == 1:
-                    if car.yCoordinate >= y + roadWidth - roadWidth / 4:
-                        car.outgoing = False
-                car.yCoordinate += carConfig.speed
+                if car.yCoordinate <= y and lane1.state == 0:
+                    if car.yCoordinate + carConfig.speed < lane1.lastCar:
+                        car.yCoordinate += carConfig.speed
+                    else:
+                        lane1.lastCar = car.yCoordinate - car.radius
+                else:
+                    car.yCoordinate += carConfig.speed
+                if lane1.state != 0:
+                    car.yCoordinate += carConfig.speed
+                    if  not car.crossed and car.yCoordinate > y+5:
+                            lane1.carsWaiting -= 1
+                            car.crossed = True
+                    if car.direction == 0:
+                        if car.yCoordinate >= y + roadWidth / 4:
+                            car.outgoing = False
+                    elif car.direction == 1:
+                        if car.yCoordinate >= y + roadWidth - roadWidth / 4:
+                            car.outgoing = False
+
             else:
                 if car.direction == 0:
                     car.xCoordinate += carConfig.speed
@@ -257,15 +371,31 @@ while not done:
                     car.xCoordinate -= carConfig.speed
                 else:
                     car.yCoordinate += carConfig.speed
+                    if  not car.crossed and car.yCoordinate > y+5:
+                            lane1.carsWaiting -= 1
+                            car.crossed = True
         elif car.lane == 2:
             if car.outgoing:
-                if car.direction == 0:
-                    if car.xCoordinate <= x + roadWidth - roadWidth / 4:
-                        car.outgoing = False
-                elif car.direction == 1:
-                    if car.xCoordinate <= x + roadWidth / 4:
-                        car.outgoing = False
-                car.xCoordinate -= carConfig.speed
+                if car.xCoordinate >= x + roadWidth and lane2.state == 0:
+                    if car.xCoordinate - carConfig.speed > lane2.lastCar:
+                        car.xCoordinate -= carConfig.speed
+                        
+                    else:
+                        lane2.lastCar = car.xCoordinate + car.radius
+                else:
+                    car.xCoordinate -= carConfig.speed
+
+                if lane2.state != 0:
+                    car.xCoordinate -= carConfig.speed
+                    if not car.crossed and car.xCoordinate <= x+roadWidth-5:
+                            lane2.carsWaiting -= 1
+                            car.crossed=True
+                    if car.direction == 0:
+                        if car.xCoordinate <= x + roadWidth - roadWidth / 4:
+                            car.outgoing = False
+                    elif car.direction == 1:
+                        if car.xCoordinate <= x + roadWidth / 4:
+                            car.outgoing = False
             else:
                 if car.direction == 0:
                     car.yCoordinate += carConfig.speed
@@ -275,13 +405,27 @@ while not done:
                     car.yCoordinate += carConfig.speed
         elif car.lane == 3:
             if car.outgoing:
-                if car.direction == 0:
-                    if car.yCoordinate <= y + roadWidth / 4:
-                        car.outgoing = False
-                elif car.direction == 1:
-                    if car.yCoordinate <= y + roadWidth - roadWidth / 4:
-                        car.outgoing = False
-                car.yCoordinate -= carConfig.speed
+                if car.yCoordinate >= y + roadWidth and lane3.state == 0:
+                    if car.yCoordinate - carConfig.speed > lane3.lastCar:
+                        car.yCoordinate -= carConfig.speed
+                        
+                    else:
+                        lane3.lastCar = car.yCoordinate + car.radius
+                    
+                else:
+                    car.yCoordinate -= carConfig.speed
+
+                if lane3.state != 0:
+                    car.yCoordinate -= carConfig.speed
+                    if not car.crossed and car.yCoordinate <= y+roadWidth-5:
+                            lane3.carsWaiting -= 1
+                            car.crossed=True
+                    if car.direction == 0:
+                        if car.yCoordinate <= y + roadWidth / 4:
+                            car.outgoing = False
+                    elif car.direction == 1:
+                        if car.yCoordinate <= y + roadWidth - roadWidth / 4:
+                            car.outgoing = False
             else:
                 if car.direction == 0:
                     car.xCoordinate -= carConfig.speed
@@ -291,13 +435,27 @@ while not done:
                     car.yCoordinate -= carConfig.speed
         else:
             if car.outgoing:
-                if car.direction == 0:
-                    if car.xCoordinate >= x + roadWidth / 4:
-                        car.outgoing = False
-                elif car.direction == 1:
-                    if car.xCoordinate >= x + roadWidth - roadWidth / 4:
-                        car.outgoing = False
-                car.xCoordinate += carConfig.speed
+                if car.xCoordinate <= x and lane4.state == 0:
+                    if car.xCoordinate + carConfig.speed < lane4.lastCar:
+                        car.xCoordinate += carConfig.speed
+                        
+                    else:
+                        lane4.lastCar = car.xCoordinate - car.radius
+                else:
+                    car.xCoordinate += carConfig.speed
+
+                if lane4.state != 0:
+                    car.xCoordinate += carConfig.speed
+                    if not car.crossed and car.xCoordinate >= x+5:
+                            lane4.carsWaiting -= 1
+                            car.crossed=True
+                    if car.direction == 0:
+                        if car.xCoordinate >= x + roadWidth / 4:
+                            car.outgoing = False
+                    elif car.direction == 1:
+                        if car.xCoordinate >= x + roadWidth - roadWidth / 4:
+                            car.outgoing = False
+
             else:
                 if car.direction == 0:
                     car.yCoordinate -= carConfig.speed
